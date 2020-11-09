@@ -36,21 +36,21 @@ Now you can use every file from the submodule. Install all the required python p
 To run the experiments that are presented in the paper, execute either
 
 ``` 
-python experiments/
+python run_exp
 ``` 
 for the experiments of Section 4.1 (produces Figures .... and prints the mentioned percentages on screen)
 
 or
 
 ``` 
-python experiments/
+python run_exp
 ``` 
 for the experiments of Section 4.1 (produces Figures .... and prints the mentioned percentages on screen)
 
 If you only want to see the results, you just have to run
 
 ``` 
-python experiments/plot_xy.py
+python plot.py --Figure-xy
 ``` 
 with xy = for Figure ..., xy = for Figure ... All data from the experiments are available and stored in the repository. 
 
