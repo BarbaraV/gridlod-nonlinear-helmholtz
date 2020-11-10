@@ -24,12 +24,19 @@ Initialize the submodule via
 git submodule update --init --recursive
 ```
 
-and execute the following commands 
+Now, build and activate a python3 virtual environment with
+
+```
+virtualenv -p python3 venv3
+. venv3/bin/activate
+```
+
+and execute the following command
 
 ```
 echo $PWD/gridlod/ > $(python -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')/gridlod.pth
 ```
-Now you can use every file from the submodule. Install all the required python packages for gridlod.
+Now you can use every file from the submodule in the virtualenv. Install all the required python packages for gridlod.
 
 ## Reproduction of experiments
 
