@@ -349,7 +349,7 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
             k2FineUOld = np.copy(k2FineU)
 
             # visualization
-            if it == maxit - 1 and N == 2**1:
+            if it == maxit - 1 and N == 2**4:
                 grid = uLodFine.reshape(NFine + 1, order='C')
 
                 plt.figure(2)

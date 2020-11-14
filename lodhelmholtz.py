@@ -67,13 +67,9 @@ def ritzProjectionToFinePatch(patch,
 
     # Using schur complement solver for the case when there are no
     # Dirichlet conditions does not work. Fix if necessary.
-    #assert(np.any(boundaryMap == True))
 
     fixed = util.boundarypIndexMap(NPatchFine, boundaryMap)
-    #print(fixed)
-
-    #projectionsList = saddleSolver.solve(APatch, IPatch, bPatchList)
-
+    
     projectionsList = saddleSolver.solve(APatchFull, IPatch, bPatchFullList, fixed, patch.NPatchCoarse, world.NCoarseElement)
 
     return projectionsList
@@ -188,8 +184,6 @@ def computeElementCorrector_helmholtz(patch, IPatch, aPatch, kPatch, k2Patch, AR
     kBdPatchFull = fem.assemblePatchBoundaryMatrix(NPatchFine, BdLocFine, kPatch, bdMapPatch)
 
     SPatchFull = APatchFull - k2MPatchFull + 1j*kBdPatchFull
-    #if bdMapElement.any() == True:
-    #    print(SPatchFull)
 
     bPatchFullList = []
     for rhsIndex in range(numRhs):
