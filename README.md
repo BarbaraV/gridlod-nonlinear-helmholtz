@@ -15,8 +15,10 @@ This setup works with a Ubuntu system. The following packages are required (test
  - python (v3.)
  - numpy
  - scipy
+ - scikit-sparse
  - UMFPack 
  - matplotlib
+ 
 Please see also the README of the `gridlod` submodule for required packages and setup.
 Initialize the submodule via
 
@@ -36,30 +38,30 @@ and execute the following command
 ```
 echo $PWD/gridlod/ > $(python -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')/gridlod.pth
 ```
-Now you can use every file from the submodule in the virtualenv. Install all the required python packages for gridlod.
+Now you can use every file from the submodule in the virtualenv. Install all the required python packages for gridlod. 
 
 ## Reproduction of experiments
 
 To run the experiments that are presented in the paper, execute either
 
 ``` 
-python run_exp
+python run_exp1.py
 ``` 
-for the experiments of Section 4.1 (produces Figures .... and prints the mentioned percentages on screen)
+for the experiments of Section 4.1 (produces Figures 4.1 and 4.2 and prints the mentioned percentages on screen)
 
 or
 
 ``` 
-python run_exp
+python run_exp2.py
 ``` 
-for the experiments of Section 4.1 (produces Figures .... and prints the mentioned percentages on screen)
+for the experiments of Section 4.2 (produces Figures 4.3 and 4.4 and prints the mentioned percentages on screen)
 
-If you only want to see the results, you just have to run
+If you only want to see the error plots, you just have to run
 
 ``` 
-python plot.py --Figure-xy
+python plot.py
 ``` 
-with xy = for Figure ..., xy = for Figure ... All data from the experiments are available and stored in the repository. 
+All data from the experiments are available and stored in the repository as .mat-files. 
 
 ## Note
 
