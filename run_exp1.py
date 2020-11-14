@@ -15,8 +15,8 @@ import lodhelmholtz as lod
 from gridlod import pglod, util, interp, coef, fem, func
 from gridlod.world import World, Patch
 
-fineLevel = 6; 
-maxCoarseLevel = 4;
+fineLevel = 7; 
+maxCoarseLevel = 6;
 maxIt = 8
 
 def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):

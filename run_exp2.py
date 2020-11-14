@@ -16,8 +16,8 @@ from gridlod import pglod, util, interp, coef, fem, func
 from gridlod.world import World, Patch
 from matplotlib import ticker
 
-fineLevel = 6; 
-maxCoarseLevel = 4;
+fineLevel = 7; 
+maxCoarseLevel = 6;
 maxIt = 8
 
 def drawCoefficient(N, a):
@@ -133,6 +133,9 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
 
     kBdFine = fem.assemblePatchBoundaryMatrix(NFine, fem.localBoundaryMassMatrixGetter(NFine), kFine)
     KFine = fem.assemblePatchMatrix(NFine, fem.localStiffnessMatrix(NFine), aFine)
+    
+    # incident beam
+    uInc = mult/(np.cosh(fact*(a*xC-b))+1)*np.exp(-1.j*k2*(a*xC-b))
 
     print('***computing reference solution***')
     
@@ -346,7 +349,7 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
             k2FineUOld = np.copy(k2FineU)
 
             # visualization
-            if it == maxit - 1 and N == 2**4:
+            if it == maxit - 1 and N == 2**1:
                 grid = uLodFine.reshape(NFine + 1, order='C')
 
                 plt.figure(2)
@@ -359,6 +362,13 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
                 plt.figure(1)
                 plt.title('reference solution - Ex 2')
                 plt.imshow(grid2.real, extent=(xC.min(), xC.max(), yC.min(), yC.max()), cmap=plt.cm.hot,origin='lower', vmin = -.6, vmax = .6)
+                plt.colorbar()
+                
+                grid3 = uInc.reshape(NFine + 1, order='C')
+
+                plt.figure(6)
+                plt.title('incident beam - Ex 2')
+                plt.imshow(grid3.real, extent=(xC.min(), xC.max(), yC.min(), yC.max()), cmap=plt.cm.hot,origin='lower', vmin = -.6, vmax = .6)
                 plt.colorbar()
 
             Err = np.sqrt(np.dot((uSol - uLodFine).conj(), KFineFEM * (uSol - uLodFine)) + k**2*np.dot((uSol - uLodFine).conj(), MFineFEM * (uSol - uLodFine)))
