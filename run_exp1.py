@@ -10,8 +10,9 @@ import numpy as np
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
 import scipy.io as sio 
+import lodhelmholtz as lod
 
-from gridlod import pglod, util, interp, coef, fem, func, lodhelmholtz
+from gridlod import pglod, util, interp, coef, fem, func
 from gridlod.world import World, Patch
 
 fineLevel = 6; 
