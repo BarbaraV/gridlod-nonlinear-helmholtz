@@ -1,9 +1,13 @@
 # Second experiment
 # Copyright holders: Roland Maier, Barbara Verfuerth
 # 2020
-
-# Set fineLevel=9, maxCoarseLevel=7, and maxIt=20 for the experiment in the paper.
-# This might take some time.
+#
+# Choose fineLevel=9, maxCoarseLevel=7, and maxIt=20 for the experiment in the paper.
+# This will take time since the algorithm below does not exploit the potential
+# parallelization and computes the different approximations one after the other.
+# To obtain a first qualitative impression, it is recommended to use the parameters
+# fineLevel=6, maxCoarseLevel=5, and maxIt=8.
+#
 # Note that the level of data oscillations is automatically set to fineLevel-2
 
 import numpy as np
@@ -16,9 +20,9 @@ from gridlod import pglod, util, interp, coef, fem, func
 from gridlod.world import World, Patch
 from matplotlib import ticker
 
-fineLevel = 7; 
-maxCoarseLevel = 6;
-maxIt = 8
+fineLevel = 9 
+maxCoarseLevel = 7
+maxIt = 20
 
 def drawCoefficient(N, a):
     aCube = a.reshape(N, order='F')
@@ -47,7 +51,7 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
 
     k = 30. # wavenumber
     maxit_Fine = 250
-    tol = 0.5 # coupled to maximal error indicator! (originally 0.02 and no coupling below!)
+    tol = 0.5 # coupled to maximal error indicator
 
     xt = util.tCoordinates(NFine)
     xp = util.pCoordinates(NFine)
@@ -89,7 +93,7 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
     for i in range((nFine) // lvl):
         epsEpsPro[lvl * i * (nFine):lvl * (i + 1) * (nFine)] = np.tile(np.repeat(epsEps[i * (nFine) // lvl:(i + 1) * (nFine) // lvl], lvl), lvl)
     epsFine = np.zeros(xt.shape[0])
-    epsFine[indicesInEps] = Ceps * epsEpsPro[indicesInEps]  ###  0 OR Ceps
+    epsFine[indicesInEps] = Ceps * epsEpsPro[indicesInEps]  #  0 OR Ceps
 
     drawCoefficient(NFine,epsFine)
 

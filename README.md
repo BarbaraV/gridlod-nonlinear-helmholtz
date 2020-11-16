@@ -12,9 +12,9 @@ This repository provides code for the experiments of the paper "Multiscale scatt
 ## Setup
 
 This setup works with a Ubuntu system. The following packages are required (tested versions):
- - python (v3.)
- - numpy
- - scipy
+ - python (v3.8.5)
+ - numpy (v1.19.4)
+ - scipy (v1.5.4)
  - scikit-sparse
  - UMFPack 
  - matplotlib
@@ -54,9 +54,12 @@ or
 ``` 
 python run_exp2.py
 ``` 
-for the experiments of Section 4.2 (produces Figures 4.3 and 4.4 and prints the mentioned percentages on screen)
+for the experiments of Section 4.2 (produces Figures 4.3 and 4.4 and prints the mentioned percentages on screen).
+Note that this will take some time because the three methods are computed one after the other and the possible
+parallelization of the code is not exploited. Alternatively, you can follow the instructions in the files and
+run the code with the proposed adapted parameters for a qualitative illustration.
 
-If you only want to see the error plots, you just have to run
+If you only want to see the error plots for the experiments in the paper, you just have to run
 
 ``` 
 python plot.py

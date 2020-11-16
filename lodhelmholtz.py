@@ -1,3 +1,7 @@
+# Modifications to GRIDLOD for nonlinear Helmholtz setup
+# Copyright holders: Roland Maier, Barbara Verfuerth
+# 2020
+
 import numpy as np
 import scipy.sparse as sparse
 import scipy.sparse.linalg

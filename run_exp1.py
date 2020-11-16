@@ -1,9 +1,13 @@
 # First experiment
 # Copyright holders: Roland Maier, Barbara Verfuerth
 # 2020
-
-# Set fineLevel=9, maxCoarseLevel=7, and maxIt=20 for the experiment in the paper.
-# This might take some time.
+#
+# Choose fineLevel=9, maxCoarseLevel=7, and maxIt=20 for the experiment in the paper.
+# This will take time since the algorithm below does not exploit the potential
+# parallelization and computes the different approximations one after the other.
+# To obtain a first qualitative impression, it is recommended to use the parameters
+# fineLevel=6, maxCoarseLevel=5, and maxIt=8.
+#
 # Note that the level of data oscillations is automatically set to fineLevel-2
 
 import numpy as np
@@ -15,9 +19,9 @@ import lodhelmholtz as lod
 from gridlod import pglod, util, interp, coef, fem, func
 from gridlod.world import World, Patch
 
-fineLevel = 7; 
-maxCoarseLevel = 6;
-maxIt = 8
+fineLevel = 9 
+maxCoarseLevel = 7
+maxIt = 20
 
 def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
     NFine = np.array([2 ** fineLvl, 2 ** fineLvl])
@@ -642,15 +646,6 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
     plt.plot(its,errFEM_1_4[:8],'x-',color='red', label='FEM, Hlvl 4', linestyle='dotted')
     plt.yscale('log')
     plt.legend()
-
-#plt.figure(5)
-#plt.plot(Hs,errLOD_2,'x-',color='blue', label='LOD_ad')
-#plt.plot(Hs,errLOD0_2,'x-',color='green', label='LOD_inf')
-#plt.plot(Hs,errFEM_2,'x-',color='red', label='FEM')
-#plt.plot([0.5,0.0078125],[0.75,0.01171875], color='black', linestyle='dashed', label='order 1')
-#plt.yscale('log')
-#plt.xscale('log')
-#plt.legend()
 
     plt.show()
 
