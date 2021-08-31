@@ -27,7 +27,7 @@ maxIt = 20
 def drawCoefficient(N, a):
     aCube = a.reshape(N, order='F')
     aCube = np.ascontiguousarray(aCube.T)
-    plt.figure(6)
+    plt.figure(8)
     
     cmap = plt.cm.get_cmap('binary')
             
@@ -545,8 +545,6 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
             uLodFine = modifiedBasis * xFull
             uOldUps = np.copy(uLodFine)
             k2FineUOld = np.copy(k2FineU)
-            
-            resCoarse = np.linalg.norm((KLOD-k2MLOD+1j*kBdLOD) * xFull - fHQuad)
 
             # visualization
             if it == maxit - 1 and N == 2**4:
@@ -563,6 +561,186 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
             
             # save errors in arrays
             relErrEnergyNoUpdate[counter-1,it] = ErrEnergy
+            
+        print('\n')
+
+
+######################################################################################      
+    
+    print('***computing multiscale approximations where all correctors in the part of the domain with active nonlinearity are recomputed***')
+    
+    relErrEnergyFullUpdate = np.zeros([len(NList),maxit])
+    
+    counter = 0
+    for N in NList:
+        counter += 1
+        print('H = %.4e' % (1./N))
+        NWorldCoarse = np.array([N, N])
+        NCoarseElement = NFine // NWorldCoarse
+        world = World(NWorldCoarse, NCoarseElement, boundaryConditions)
+        NpCoarse = np.prod(NWorldCoarse + 1)
+
+        uOldUps = np.zeros(NpFine, dtype='complex128')
+
+        for it in np.arange(maxit):
+            print('-- it = %d:' % it)
+            knonlinUpre = np.abs(uOldUps)
+            knonlinU = func.evaluateCQ1(NFine, knonlinUpre, xt)
+
+            k2FineU = np.copy(k2Fine)
+            k2FineU[indicesInEps] *= (1. + epsFine[indicesInEps] * knonlinU[indicesInEps] ** 2)
+
+            print('---- starting computation of correctors')
+
+            def computeLocalContribution(TInd):
+                patch = Patch(world, ell, TInd)
+                IPatch = lambda: interp.L2ProjectionPatchMatrix(patch, boundaryConditions)
+                aPatch = lambda: coef.localizeCoefficient(patch, aFine)
+                kPatch = lambda: coef.localizeCoefficient(patch, kFine)
+                k2Patch = lambda: coef.localizeCoefficient(patch, k2FineU)
+
+                correctorsList = lod.computeBasisCorrectors_helmholtz(patch, IPatch, aPatch, kPatch, k2Patch)  # adapted for Helmholtz setting
+                csi = lod.computeBasisCoarseQuantities_helmholtz(patch, correctorsList, aPatch, kPatch, k2Patch)  # adapted for Helmholtz setting
+                return patch, correctorsList, csi.Kmsij, csi.Mmsij, csi.Bdmsij, csi.muTPrime
+
+            def computeIndicators(TInd):
+                k2FineUPatch = lambda: coef.localizeCoefficient(patchT[TInd], k2FineU)
+                k2FineUOldPatch = lambda: coef.localizeCoefficient(patchT[TInd], k2FineUOld)
+
+                E_vh = lod.computeErrorIndicatorCoarse_helmholtz(patchT[TInd],muTPrime[TInd],k2FineUOldPatch,k2FineUPatch)
+                return E_vh
+
+            def UpdateCorrectors(TInd):
+                patch = Patch(world, ell, TInd)
+                IPatch = lambda: interp.L2ProjectionPatchMatrix(patch, boundaryConditions)
+                aPatch = lambda: coef.localizeCoefficient(patch, aFine)
+                kPatch = lambda: coef.localizeCoefficient(patch, kFine)
+                k2Patch = lambda: coef.localizeCoefficient(patch, k2FineU)
+
+                correctorsList = lod.computeBasisCorrectors_helmholtz(patch, IPatch, aPatch, kPatch, k2Patch)
+                csi = lod.computeBasisCoarseQuantities_helmholtz(patch, correctorsList, aPatch, kPatch, k2Patch)  # adapted for Helmholtz setting
+                return patch, correctorsList, csi.Kmsij, csi.Mmsij, csi.Bdmsij, csi.muTPrime
+
+            def UpdateElements(tol, E, Kmsij_old, Mmsij_old, Bdmsij_old, correctors_old, mu_old):
+                print('---- apply tolerance')
+                Elements_to_be_updated = []
+                for (i, eps) in E.items():
+                    if eps > tol : 
+                        Elements_to_be_updated.append(i)
+                if len(E) > 0:
+                    print('---- total percentage of element correctors to be updated: %.4f' % (100 * np.size(Elements_to_be_updated) / len(mu_old)), flush=True)
+
+                print('---- update local contributions')
+                KmsijT_list = list(np.copy(Kmsij_old))
+                MmsijT_list = list(np.copy(Mmsij_old))
+                BdmsijT_list = list(np.copy(Bdmsij_old))
+                muT_list = np.copy(mu_old)
+                for T in np.setdiff1d(range(world.NtCoarse), Elements_to_be_updated):
+                    patch = Patch(world, ell, T)
+                    aPatch = lambda: coef.localizeCoefficient(patch, aFine)
+                    kPatch = lambda: coef.localizeCoefficient(patch, kFine)
+                    k2Patch = lambda: coef.localizeCoefficient(patch, k2FineU)
+                    csi = lod.computeBasisCoarseQuantities_helmholtz(patch, correctors_old[T], aPatch, kPatch, k2Patch)
+
+                    KmsijT_list[T] = csi.Kmsij
+                    MmsijT_list[T] = csi.Mmsij
+                    BdmsijT_list[T] = csi.Bdmsij
+                    muT_list[T] = csi.muTPrime
+
+                if np.size(Elements_to_be_updated) != 0:
+                    #print('---- update correctors')
+                    patchT_irrelevant, correctorsListTNew, KmsijTNew, MmsijTNew, BdmsijTNew, muTPrimeNew = zip(*mapper(UpdateCorrectors,Elements_to_be_updated))
+
+                    #print('---- update correctorsList')
+                    correctorsListT_list = list(np.copy(correctors_old))
+                    i = 0
+                    for T in Elements_to_be_updated:
+                        KmsijT_list[T] = KmsijTNew[i]
+                        correctorsListT_list[T] = correctorsListTNew[i]
+                        MmsijT_list[T] = MmsijTNew[i]
+                        BdmsijT_list[T] = BdmsijTNew[i]
+                        muT_list[T] = muTPrimeNew[i]
+                        i += 1
+
+                    KmsijT = tuple(KmsijT_list)
+                    correctorsListT = tuple(correctorsListT_list)
+                    MmsijT = tuple(MmsijT_list)
+                    BdmsijT = tuple(BdmsijT_list)
+                    muTPrime = tuple(muT_list)
+                    return correctorsListT, KmsijT, MmsijT, BdmsijT, muTPrime
+                else:
+                    KmsijT = tuple(KmsijT_list)
+                    MmsijT = tuple(MmsijT_list)
+                    BdmsijT = tuple(BdmsijT_list)
+                    muTPrime = tuple(muT_list)
+                    return correctors_old, KmsijT, MmsijT, BdmsijT, muTPrime
+
+            if it == 0:
+                patchT, correctorsListT, KmsijT, MmsijT, BdmsijT, muTPrime = zip(
+                    *mapper(computeLocalContribution, range(world.NtCoarse)))
+            else:
+                E_vh = list(mapper(computeIndicators, range(world.NtCoarse)))
+                print('---- maximal value error estimator for basis correctors {}'.format(np.max(E_vh)))
+                E = {i: E_vh[i] for i in range(np.size(E_vh)) if E_vh[i] > 0 }
+
+                # loop over elements with possible recomputation of correctors
+                correctorsListT, KmsijT, MmsijT, BdmsijT, muTPrime = UpdateElements(0., E, KmsijT, MmsijT, BdmsijT, correctorsListT, muTPrime) # no updates
+
+            print('---- finished computation of correctors')
+
+            KLOD = pglod.assembleMsStiffnessMatrix(world, patchT, KmsijT) # ms stiffness matrix
+            k2MLOD = pglod.assembleMsStiffnessMatrix(world, patchT, MmsijT)  # ms mass matrix
+            kBdLOD = pglod.assembleMsStiffnessMatrix(world, patchT, BdmsijT)  # ms boundary matrix
+            MFEM = fem.assemblePatchMatrix(NWorldCoarse, world.MLocCoarse)
+            BdFEM = fem.assemblePatchBoundaryMatrix(NWorldCoarse, fem.localBoundaryMassMatrixGetter(NWorldCoarse))
+            print('---- coarse matrices assembled')
+
+            nodes = np.arange(world.NpCoarse)
+            fix = util.boundarypIndexMap(NWorldCoarse, boundaryConditions == 0)
+            free = np.setdiff1d(nodes, fix)
+            assert (nodes.all() == free.all())
+
+            # compute global interpolation matrix
+            patchGlobal = Patch(world, NFine[0] + 2, 0)
+            IH = interp.L2ProjectionPatchMatrix(patchGlobal, boundaryConditions)
+            assert (IH.shape[0] == NpCoarse)
+
+            basis = fem.assembleProlongationMatrix(NWorldCoarse, NCoarseElement)
+
+            fHQuad = basis.T * MFineFEM * f + basis.T*BdFineFEM*g
+
+            print('---- solving coarse system')
+
+            # coarse system
+            lhsH = KLOD[free][:, free] - k2MLOD[free][:, free] + 1j * kBdLOD[free][:,free]
+            rhsH = fHQuad[free]
+            xFree = sparse.linalg.spsolve(lhsH, rhsH)
+
+            basisCorrectors = pglod.assembleBasisCorrectors(world, patchT, correctorsListT)
+            modifiedBasis = basis - basisCorrectors
+
+            xFull = np.zeros(world.NpCoarse, dtype='complex128')
+            xFull[free] = xFree
+            uLodCoarse = basis * xFull
+            uLodFine = modifiedBasis * xFull
+            uOldUps = np.copy(uLodFine)
+            k2FineUOld = np.copy(k2FineU)
+
+            # visualization
+            if it == maxit - 1 and N == 2**4:
+                grid = uLodFine.reshape(NFine + 1, order='C')
+
+                plt.figure(7)
+                plt.title('LOD_inf, Hlvl=4 - Ex 2')
+                plt.imshow(grid.real, extent=(xC.min(), xC.max(), yC.min(), yC.max()), cmap=plt.cm.hot,origin='lower', vmin = -.6, vmax = .6)
+                plt.colorbar()
+
+            Err = np.sqrt(np.dot((uSol - uLodFine).conj(), KFineFEM * (uSol - uLodFine)) + k**2*np.dot((uSol - uLodFine).conj(), MFineFEM * (uSol - uLodFine)))
+            ErrEnergy = Err / np.sqrt(np.dot((uSol).conj(), KFineFEM * (uSol)) + k**2*np.dot((uSol).conj(), MFineFEM * (uSol)))
+            print('---- ',np.abs(ErrEnergy), '\n***********************************************')
+            
+            # save errors in arrays
+            relErrEnergyFullUpdate[counter-1,it] = ErrEnergy
             
         print('\n')
 
@@ -662,6 +840,7 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
     # error plots
     errLOD_2 = np.min(relErrEnergy,1)
     errLOD0_2 = np.min(relErrEnergyNoUpdate,1)
+    errLODall_2 = np.min(relErrEnergyFullUpdate,1)
     errFEM_2 = np.min(FEMrelErrEnergy,1)
     
     Hs = 0.5**np.arange(1,maxCoarseLvl+1)
@@ -670,6 +849,7 @@ def helmholtz_nonlinear_adaptive(mapper,fineLvl,maxCoarseLvl,maxit):
     plt.title('Relative energy errors w.r.t H - Ex 2')
     plt.plot(Hs,errLOD_2,'x-',color='blue', label='LOD_ad')
     plt.plot(Hs,errLOD0_2,'x-',color='green', label='LOD_inf')
+    plt.plot(Hs,errLODall_2,'x-',color='orange', label='LOD_0')
     plt.plot(Hs,errFEM_2,'x-',color='red', label='FEM')
     plt.plot([0.5,0.0078125],[0.75,0.01171875], color='black', linestyle='dashed', label='order 1')
     plt.yscale('log')

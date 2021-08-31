@@ -54,7 +54,14 @@ or
 ``` 
 python run_exp2.py
 ``` 
-for the experiments of Section 4.2 (produces Figures 4.3 and 4.4 and prints the mentioned percentages on screen).
+for the experiments of Section 4.2 (produces Figures 4.3 and 4.4 and prints the mentioned percentages on screen)
+
+or
+
+``` 
+python run_exp3.py
+``` 
+for the experiment of Section 4.3 (produces Figures 4.5).
 Note that this will take some time because the three methods are computed one after the other and the possible
 parallelization of the code is not exploited. Alternatively, you can follow the instructions in the files and
 run the code with the proposed adapted parameters for a qualitative illustration.
