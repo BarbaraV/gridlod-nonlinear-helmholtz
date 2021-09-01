@@ -2,12 +2,12 @@
 
 ```
 # This repository is part of the project for "Multiscale scattering in nonlinear Kerr-type media":
-#   https://
+#   https://github.com/BarbaraV/gridlod-nonlinear-helmholtz
 # Copyright holder: Roland Maier, Barbara Verfürth 
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 ```
 
-This repository provides code for the experiments of the paper "Multiscale scattering in nonlinear Kerr-type media" by Roland Maier and Barbara Verfürth. The code is based on the module `gridlod`  which has been developed by Fredrik Hellman and Tim Keil and consists of code for PGLOD.  `gridlod` is  `provided as a submodule, the other files in this repository extend and modify the PGLOD to work for nonlinear Helmholtz equation and were written by Roland Maier and Barbara Verfürth.
+This repository provides code for the experiments of the paper "Multiscale scattering in nonlinear Kerr-type media" by Roland Maier and Barbara Verfürth. The code is based on the module `gridlod`  which has been developed by Fredrik Hellman and Tim Keil and consists of code for PGLOD.  `gridlod` is  provided as a submodule, the other files in this repository extend and modify the PGLOD to work for nonlinear Helmholtz equation and were written by Roland Maier and Barbara Verfürth.
 
 ## Setup
 
